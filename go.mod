@@ -1,4 +1,4 @@
-module flight-data-recorder
+module github.com/mycrew-online/flight-data-recorder
 
 go 1.23
 
