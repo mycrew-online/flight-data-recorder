@@ -2,8 +2,11 @@
   import './../app.css';
   import SimStatus from '$lib/components/SimStatus.svelte';
   import { simStatus } from '$lib/stores/simStatus';
+  import SimulatorStatePanel from '$lib/components/SimulatorStatePanel.svelte';
+  import { simulatorState } from '$lib/stores/simulatorState';
   const { children } = $props();
   let sidebarOpen = $state(false);
+
 </script>
 
 <div class="h-full bg-gray-100 min-h-screen">
@@ -103,7 +106,7 @@
         </svg>
       </button>
       {/if}
-      <div class="flex flex-1 items-center justify-end">
+      <div class="flex flex-1 items-center justify-end gap-4">
         <SimStatus />
       </div>
     </div>

@@ -2,7 +2,7 @@
 import { simStatus } from '$lib/stores/simStatus';
 import { airplaneState } from '$lib/stores/airplaneState';
 import { environmentState } from '$lib/stores/environmentState';
-// import SimStatus from '$lib/components/SimStatus.svelte';
+import SimulatorStatePanel from '$lib/components/SimulatorStatePanel.svelte';
 </script>
 
 <div class="min-h-full isolate relative">
@@ -15,6 +15,9 @@ import { environmentState } from '$lib/stores/environmentState';
     </div>
     {:else}
     <!-- Main app content goes here -->
+    <section class="mx-auto max-w-3xl px-0 py-0">
+      <SimulatorStatePanel />
+    </section>
     <section class="mx-auto max-w-3xl px-0 py-0">
         <h2 class="text-2xl font-bold mb-4 text-blue-700 dark:text-blue-300">Airplane State</h2>
         <pre class="rounded-lg bg-gradient-to-br from-blue-900/80 to-blue-700/80 text-blue-100 p-0 overflow-x-auto shadow-lg border border-blue-400/30">{JSON.stringify($airplaneState, null, 2)}</pre>

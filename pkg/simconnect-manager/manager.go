@@ -15,6 +15,16 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
+// bytesToString converts a null-terminated byte array to a Go string
+func bytesToString(b []byte) string {
+	for i, v := range b {
+		if v == 0 {
+			return string(b[:i])
+		}
+	}
+	return string(b)
+}
+
 // AirplaneData matches the simvar order and types for SimConnect data definition
 type AirplaneData struct {
 	Title     [256]byte // string256, units: blank
@@ -73,11 +83,14 @@ const simStateRequestID uint32 = 1001
 
 // --- SimulatorState for system state monitoring ---
 type SimulatorState struct {
-	mu      sync.RWMutex
-	Sim     int
-	Pause   int
-	Crashed int
-	View    int
+	mu             sync.RWMutex
+	Sim            int
+	Pause          int
+	Crashed        int
+	View           int
+	AircraftLoaded string
+	FlightLoaded   string
+	FlightPlan     string
 }
 
 func (s *SimulatorState) SetSim(val int) {
@@ -224,6 +237,19 @@ func (m *SimConnectManager) connect() {
 	m.logInfo("[SimConnectManager] Connected successfully.")
 	m.state = Online
 	m.setConnected(true)
+	// Subscribe to system events for live updates
+	_ = m.client.SubscribeToSystemEvent(100, "Pause")
+	_ = m.client.SubscribeToSystemEvent(101, "AircraftLoaded")
+	_ = m.client.SubscribeToSystemEvent(102, "FlightLoaded")
+	_ = m.client.SubscribeToSystemEvent(103, "Crashed")
+	_ = m.client.SubscribeToSystemEvent(107, "Sim")
+	_ = m.client.SubscribeToSystemEvent(108, "View")
+
+	// Request initial system state values (one-shot, not heartbeat)
+	if err := m.requestInitialSystemStates(); err != nil {
+		m.logDebug("Failed to request initial system states:", err)
+	}
+
 	go m.listen()
 	go m.monitorSystemState()
 }
@@ -292,11 +318,107 @@ func (m *SimConnectManager) listen() {
 		}
 		// Handle SimConnect messages by type (production pattern)
 		switch message.MessageType {
+		case types.SIMCONNECT_RECV_ID_EVENT:
+			if ev, ok := message.Data.(*types.SIMCONNECT_RECV_EVENT); ok {
+				updated := false
+				m.simState.mu.Lock()
+				switch ev.UEventID {
+				case 100: // Pause
+					m.simState.Pause = int(ev.DwData)
+					updated = true
+				case 101: // AircraftLoaded
+					// No string data, handled by SYSTEM_STATE
+				case 102: // FlightLoaded
+					// No string data, handled by SYSTEM_STATE
+				case 103: // Crashed
+					m.simState.Crashed = int(ev.DwData)
+					updated = true
+				case 107: // Sim
+					m.simState.Sim = int(ev.DwData)
+					updated = true
+				case 108: // View
+					m.simState.View = int(ev.DwData)
+					updated = true
+				}
+				m.simState.mu.Unlock()
+				// Emit simulator state to frontend if updated
+				if updated && m.wailsCtx != nil {
+					m.simState.mu.RLock()
+					stateCopy := struct {
+						Sim            int    `json:"Sim"`
+						Pause          int    `json:"Pause"`
+						Crashed        int    `json:"Crashed"`
+						View           int    `json:"View"`
+						AircraftLoaded string `json:"AircraftLoaded"`
+						FlightLoaded   string `json:"FlightLoaded"`
+						FlightPlan     string `json:"FlightPlan"`
+					}{
+						Sim:            m.simState.Sim,
+						Pause:          m.simState.Pause,
+						Crashed:        m.simState.Crashed,
+						View:           m.simState.View,
+						AircraftLoaded: m.simState.AircraftLoaded,
+						FlightLoaded:   m.simState.FlightLoaded,
+						FlightPlan:     m.simState.FlightPlan,
+					}
+					m.simState.mu.RUnlock()
+					go func(state interface{}) {
+						runtime.EventsEmit(m.wailsCtx, "simulator::state", state)
+					}(stateCopy)
+				}
+			}
 		case types.SIMCONNECT_RECV_ID_SYSTEM_STATE:
 			if ev, ok := message.Data.(*types.SIMCONNECT_RECV_SYSTEM_STATE); ok {
-				if ev.DwRequestID == simStateRequestID {
+				var updated bool
+				switch ev.DwRequestID {
+				case simStateRequestID:
 					m.simState.SetSim(int(ev.DwInteger))
 					lastSimStateResponse = time.Now()
+					updated = true
+				case 101: // AircraftLoaded
+					m.simState.mu.Lock()
+					m.simState.AircraftLoaded = bytesToString(ev.SzString[:])
+					m.simState.mu.Unlock()
+					updated = true
+				case 102: // FlightLoaded
+					m.simState.mu.Lock()
+					m.simState.FlightLoaded = bytesToString(ev.SzString[:])
+					m.simState.mu.Unlock()
+					updated = true
+				case 103: // FlightPlan
+					m.simState.mu.Lock()
+					m.simState.FlightPlan = bytesToString(ev.SzString[:])
+					m.simState.mu.Unlock()
+					updated = true
+				case 104: // Sim (one-shot)
+					m.simState.SetSim(int(ev.DwInteger))
+					updated = true
+				}
+				// Emit simulator state to frontend if updated
+				if updated && m.wailsCtx != nil {
+					// Copy state under lock
+					m.simState.mu.RLock()
+					stateCopy := struct {
+						Sim            int    `json:"Sim"`
+						Pause          int    `json:"Pause"`
+						Crashed        int    `json:"Crashed"`
+						View           int    `json:"View"`
+						AircraftLoaded string `json:"AircraftLoaded"`
+						FlightLoaded   string `json:"FlightLoaded"`
+						FlightPlan     string `json:"FlightPlan"`
+					}{
+						Sim:            m.simState.Sim,
+						Pause:          m.simState.Pause,
+						Crashed:        m.simState.Crashed,
+						View:           m.simState.View,
+						AircraftLoaded: m.simState.AircraftLoaded,
+						FlightLoaded:   m.simState.FlightLoaded,
+						FlightPlan:     m.simState.FlightPlan,
+					}
+					m.simState.mu.RUnlock()
+					go func(state interface{}) {
+						runtime.EventsEmit(m.wailsCtx, "simulator::state", state)
+					}(stateCopy)
 				}
 			}
 		case types.SIMCONNECT_RECV_ID_SIMOBJECT_DATA:
@@ -409,4 +531,25 @@ func (m *SimConnectManager) logDebug(args ...interface{}) {
 		msg := fmt.Sprint(args...)
 		m.logger.Debug(msg)
 	}
+}
+
+// requestInitialSystemStates requests AircraftLoaded, FlightLoaded, FlightPlan, Sim (one-shot, not heartbeat)
+func (m *SimConnectManager) requestInitialSystemStates() error {
+	if m.client == nil {
+		return fmt.Errorf("SimConnect client not initialized")
+	}
+	// Use unique request IDs for each
+	if err := m.client.RequestSystemStateAircraftLoaded(101); err != nil {
+		return fmt.Errorf("AircraftLoaded request failed: %w", err)
+	}
+	if err := m.client.RequestSystemStateFlightLoaded(102); err != nil {
+		return fmt.Errorf("FlightLoaded request failed: %w", err)
+	}
+	if err := m.client.RequestSystemStateFlightPlan(103); err != nil {
+		return fmt.Errorf("FlightPlan request failed: %w", err)
+	}
+	if err := m.client.RequestSystemStateSim(104); err != nil {
+		return fmt.Errorf("Sim request failed: %w", err)
+	}
+	return nil
 }
