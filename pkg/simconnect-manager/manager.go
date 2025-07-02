@@ -49,6 +49,7 @@ type AirplaneState struct {
 }
 
 // EnvironmentData matches the simvar order and types for environment data definition
+// Using packed struct to match SimConnect's memory layout exactly
 type EnvironmentData struct {
 	ZuluTime       int32 // seconds since midnight
 	LocalTime      int32 // seconds since midnight (local)
@@ -61,6 +62,12 @@ type EnvironmentData struct {
 	LocalYear      int32 // year (Local)
 	ZuluDayOfWeek  int32 // day of week (Zulu)
 	LocalDayOfWeek int32 // day of week (Local)
+	// Weather variables - no manual padding, let Go handle alignment
+	SeaLevelPressure     float64 // SEA LEVEL PRESSURE inHg
+	AmbientTemperature   float64 // AMBIENT TEMPERATURE in Celsius
+	AmbientWindDirection float64 // AMBIENT WIND DIRECTION in degrees
+	AmbientWindVelocity  float64 // AMBIENT WIND VELOCITY in knots
+	AmbientVisibility    float64 // AMBIENT VISIBILITY in meters
 }
 
 // EnvironmentState holds the main environment vars to be monitored
@@ -76,6 +83,12 @@ type EnvironmentState struct {
 	LocalYear      int32 `json:"local_year"`
 	ZuluDayOfWeek  int32 `json:"zulu_day_of_week"`
 	LocalDayOfWeek int32 `json:"local_day_of_week"`
+	// Weather variables
+	SeaLevelPressure     float64 `json:"sea_level_pressure"`
+	AmbientTemperature   float64 `json:"ambient_temperature"`
+	AmbientWindDirection float64 `json:"ambient_wind_direction"`
+	AmbientWindVelocity  float64 `json:"ambient_wind_velocity"`
+	AmbientVisibility    float64 `json:"ambient_visibility"`
 	// Add more fields as needed for future extension
 }
 
@@ -224,6 +237,12 @@ func (m *SimConnectManager) connect() {
 	_ = m.client.AddToDataDefinition(envDefineID, "LOCAL YEAR", "number", types.SIMCONNECT_DATATYPE_INT32, 0.0, 8)
 	_ = m.client.AddToDataDefinition(envDefineID, "ZULU DAY OF WEEK", "number", types.SIMCONNECT_DATATYPE_INT32, 0.0, 9)
 	_ = m.client.AddToDataDefinition(envDefineID, "LOCAL DAY OF WEEK", "number", types.SIMCONNECT_DATATYPE_INT32, 0.0, 10)
+	// Weather variables
+	_ = m.client.AddToDataDefinition(envDefineID, "SEA LEVEL PRESSURE", "inHg", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 11)
+	_ = m.client.AddToDataDefinition(envDefineID, "AMBIENT TEMPERATURE", "celsius", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 12)
+	_ = m.client.AddToDataDefinition(envDefineID, "AMBIENT WIND DIRECTION", "degrees", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 13)
+	_ = m.client.AddToDataDefinition(envDefineID, "AMBIENT WIND VELOCITY", "knots", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 14)
+	_ = m.client.AddToDataDefinition(envDefineID, "AMBIENT VISIBILITY", "meters", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 15)
 	// Request data on user aircraft every sim frame
 	err = m.client.RequestDataOnSimObject(1, defineID, 0, types.SIMCONNECT_PERIOD_SECOND, types.SIMCONNECT_DATA_REQUEST_FLAG_CHANGED, 0, 0, 0)
 	// Request environment data every sim frame
@@ -342,7 +361,7 @@ func (m *SimConnectManager) listen() {
 				}
 				m.simState.mu.Unlock()
 				// Emit simulator state to frontend if updated
-				if updated && m.wailsCtx != nil {
+				if updated {
 					m.simState.mu.RLock()
 					stateCopy := struct {
 						Sim            int    `json:"Sim"`
@@ -362,9 +381,12 @@ func (m *SimConnectManager) listen() {
 						FlightPlan:     m.simState.FlightPlan,
 					}
 					m.simState.mu.RUnlock()
-					go func(state interface{}) {
-						runtime.EventsEmit(m.wailsCtx, "simulator::state", state)
-					}(stateCopy)
+					m.logInfo("SimulatorState: ", stateCopy)
+					if m.wailsCtx != nil {
+						go func(state interface{}) {
+							runtime.EventsEmit(m.wailsCtx, "simulator::state", state)
+						}(stateCopy)
+					}
 				}
 			}
 		case types.SIMCONNECT_RECV_ID_SYSTEM_STATE:
@@ -451,20 +473,32 @@ func (m *SimConnectManager) listen() {
 						}(m.airplaneState)
 					}
 				case 2:
-					envData := (*EnvironmentData)(unsafe.Pointer(&data.DwData))
-					m.environmentState.ZuluTime = envData.ZuluTime
-					m.environmentState.LocalTime = envData.LocalTime
-					m.environmentState.SimTime = envData.SimTime
-					m.environmentState.ZuluDay = envData.ZuluDay
-					m.environmentState.ZuluMonth = envData.ZuluMonth
-					m.environmentState.ZuluYear = envData.ZuluYear
-					m.environmentState.LocalDay = envData.LocalDay
-					m.environmentState.LocalMonth = envData.LocalMonth
-					m.environmentState.LocalYear = envData.LocalYear
-					m.environmentState.ZuluDayOfWeek = envData.ZuluDayOfWeek
-					m.environmentState.LocalDayOfWeek = envData.LocalDayOfWeek
+					// Parse environment data manually due to struct alignment issues
+					// SimConnect packs data tightly, but Go adds padding for alignment
+					dataPtr := unsafe.Pointer(&data.DwData)
+
+					// Parse int32 fields (11 fields, 4 bytes each = 44 bytes)
+					m.environmentState.ZuluTime = *(*int32)(unsafe.Pointer(uintptr(dataPtr) + 0))
+					m.environmentState.LocalTime = *(*int32)(unsafe.Pointer(uintptr(dataPtr) + 4))
+					m.environmentState.SimTime = *(*int32)(unsafe.Pointer(uintptr(dataPtr) + 8))
+					m.environmentState.ZuluDay = *(*int32)(unsafe.Pointer(uintptr(dataPtr) + 12))
+					m.environmentState.ZuluMonth = *(*int32)(unsafe.Pointer(uintptr(dataPtr) + 16))
+					m.environmentState.ZuluYear = *(*int32)(unsafe.Pointer(uintptr(dataPtr) + 20))
+					m.environmentState.LocalDay = *(*int32)(unsafe.Pointer(uintptr(dataPtr) + 24))
+					m.environmentState.LocalMonth = *(*int32)(unsafe.Pointer(uintptr(dataPtr) + 28))
+					m.environmentState.LocalYear = *(*int32)(unsafe.Pointer(uintptr(dataPtr) + 32))
+					m.environmentState.ZuluDayOfWeek = *(*int32)(unsafe.Pointer(uintptr(dataPtr) + 36))
+					m.environmentState.LocalDayOfWeek = *(*int32)(unsafe.Pointer(uintptr(dataPtr) + 40))
+
+					// Parse float64 fields starting at byte 44 (no padding in SimConnect data)
+					m.environmentState.SeaLevelPressure = *(*float64)(unsafe.Pointer(uintptr(dataPtr) + 44))
+					m.environmentState.AmbientTemperature = *(*float64)(unsafe.Pointer(uintptr(dataPtr) + 52))
+					m.environmentState.AmbientWindDirection = *(*float64)(unsafe.Pointer(uintptr(dataPtr) + 60))
+					m.environmentState.AmbientWindVelocity = *(*float64)(unsafe.Pointer(uintptr(dataPtr) + 68))
+					m.environmentState.AmbientVisibility = *(*float64)(unsafe.Pointer(uintptr(dataPtr) + 76))
 
 					m.logInfo("EnvironmentState: ", m.environmentState)
+
 					// Emit environment state to frontend
 					if m.wailsCtx != nil {
 						go func(state EnvironmentState) {
@@ -549,7 +583,7 @@ func (m *SimConnectManager) requestInitialSystemStates() error {
 		return fmt.Errorf("FlightPlan request failed: %w", err)
 	}
 	if err := m.client.RequestSystemStateSim(104); err != nil {
-		return fmt.Errorf("Sim request failed: %w", err)
+		return fmt.Errorf("sim request failed: %w", err)
 	}
 	return nil
 }

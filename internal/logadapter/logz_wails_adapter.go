@@ -23,6 +23,10 @@ func (l *LogzWailsAdapter) Printf(format string, args ...interface{}) {
 }
 
 func (l *LogzWailsAdapter) Trace(message string) {
+	// Suppress TRACE logs for 'No listeners for event' messages
+	if len(message) >= 22 && message[:22] == "No listeners for event" {
+		return
+	}
 	l.logz.Debug("TRACE: " + message)
 }
 
