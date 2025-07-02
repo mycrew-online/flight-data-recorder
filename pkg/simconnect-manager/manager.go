@@ -38,6 +38,37 @@ type AirplaneState struct {
 	// Add more fields as needed for future extension
 }
 
+// EnvironmentData matches the simvar order and types for environment data definition
+type EnvironmentData struct {
+	ZuluTime       int32 // seconds since midnight
+	LocalTime      int32 // seconds since midnight (local)
+	SimTime        int32 // seconds since sim start (int32)
+	ZuluDay        int32 // day of month (Zulu)
+	ZuluMonth      int32 // month of year (Zulu)
+	ZuluYear       int32 // year (Zulu)
+	LocalDay       int32 // day of month (Local)
+	LocalMonth     int32 // month of year (Local)
+	LocalYear      int32 // year (Local)
+	ZuluDayOfWeek  int32 // day of week (Zulu)
+	LocalDayOfWeek int32 // day of week (Local)
+}
+
+// EnvironmentState holds the main environment vars to be monitored
+type EnvironmentState struct {
+	ZuluTime       int32 `json:"zulu_time"`
+	LocalTime      int32 `json:"local_time"`
+	SimTime        int32 `json:"sim_time"`
+	ZuluDay        int32 `json:"zulu_day"`
+	ZuluMonth      int32 `json:"zulu_month"`
+	ZuluYear       int32 `json:"zulu_year"`
+	LocalDay       int32 `json:"local_day"`
+	LocalMonth     int32 `json:"local_month"`
+	LocalYear      int32 `json:"local_year"`
+	ZuluDayOfWeek  int32 `json:"zulu_day_of_week"`
+	LocalDayOfWeek int32 `json:"local_day_of_week"`
+	// Add more fields as needed for future extension
+}
+
 const simStateRequestID uint32 = 1001
 
 // --- SimulatorState for system state monitoring ---
@@ -63,16 +94,17 @@ func (s *SimulatorState) GetSim() int {
 // ...implement Pause, Crashed, View similarly if needed...
 
 type SimConnectManager struct {
-	client        *client.Engine
-	state         int
-	stateMu       sync.Mutex
-	stopCh        chan struct{}
-	stopped       sync.WaitGroup
-	statusCh      chan bool // true=connected, false=disconnected
-	logger        *logadapter.LogzWailsAdapter
-	simState      SimulatorState
-	airplaneState AirplaneState
-	wailsCtx      context.Context // Wails context for event emission
+	client           *client.Engine
+	state            int
+	stateMu          sync.Mutex
+	stopCh           chan struct{}
+	stopped          sync.WaitGroup
+	statusCh         chan bool // true=connected, false=disconnected
+	logger           *logadapter.LogzWailsAdapter
+	simState         SimulatorState
+	airplaneState    AirplaneState
+	environmentState EnvironmentState
+	wailsCtx         context.Context // Wails context for event emission
 }
 
 // SetLogger allows injection of a custom logger (Wails/go-logz adapter)
@@ -90,13 +122,6 @@ const (
 	Connecting
 	Online
 )
-
-// type Logger interface {
-//    Info(args ...interface{})
-//    Debug(args ...interface{})
-//    Warning(args ...interface{})
-//    Error(args ...interface{})
-//    Fatal(args ...interface{})
 
 func NewSimConnectManager() *SimConnectManager {
 	// Create a go-logz logger instance
@@ -173,10 +198,28 @@ func (m *SimConnectManager) connect() {
 	_ = m.client.AddToDataDefinition(defineID, "PLANE HEADING DEGREES TRUE", "radians", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 4)
 	_ = m.client.AddToDataDefinition(defineID, "AIRSPEED INDICATED", "knots", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 5)
 	_ = m.client.AddToDataDefinition(defineID, "SIM ON GROUND", "bool", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 6)
+	// Register environment data definition (matches EnvironmentData struct)
+	envDefineID := 2
+	_ = m.client.AddToDataDefinition(envDefineID, "ZULU TIME", "seconds", types.SIMCONNECT_DATATYPE_INT32, 0.0, 0)
+	_ = m.client.AddToDataDefinition(envDefineID, "LOCAL TIME", "seconds", types.SIMCONNECT_DATATYPE_INT32, 0.0, 1)
+	_ = m.client.AddToDataDefinition(envDefineID, "SIMULATION TIME", "seconds", types.SIMCONNECT_DATATYPE_INT32, 0.0, 2)
+	_ = m.client.AddToDataDefinition(envDefineID, "ZULU DAY OF MONTH", "number", types.SIMCONNECT_DATATYPE_INT32, 0.0, 3)
+	_ = m.client.AddToDataDefinition(envDefineID, "ZULU MONTH OF YEAR", "number", types.SIMCONNECT_DATATYPE_INT32, 0.0, 4)
+	_ = m.client.AddToDataDefinition(envDefineID, "ZULU YEAR", "number", types.SIMCONNECT_DATATYPE_INT32, 0.0, 5)
+	_ = m.client.AddToDataDefinition(envDefineID, "LOCAL DAY OF MONTH", "number", types.SIMCONNECT_DATATYPE_INT32, 0.0, 6)
+	_ = m.client.AddToDataDefinition(envDefineID, "LOCAL MONTH OF YEAR", "number", types.SIMCONNECT_DATATYPE_INT32, 0.0, 7)
+	_ = m.client.AddToDataDefinition(envDefineID, "LOCAL YEAR", "number", types.SIMCONNECT_DATATYPE_INT32, 0.0, 8)
+	_ = m.client.AddToDataDefinition(envDefineID, "ZULU DAY OF WEEK", "number", types.SIMCONNECT_DATATYPE_INT32, 0.0, 9)
+	_ = m.client.AddToDataDefinition(envDefineID, "LOCAL DAY OF WEEK", "number", types.SIMCONNECT_DATATYPE_INT32, 0.0, 10)
 	// Request data on user aircraft every sim frame
 	err = m.client.RequestDataOnSimObject(1, defineID, 0, types.SIMCONNECT_PERIOD_SECOND, types.SIMCONNECT_DATA_REQUEST_FLAG_CHANGED, 0, 0, 0)
+	// Request environment data every sim frame
+	err2 := m.client.RequestDataOnSimObject(2, envDefineID, 0, types.SIMCONNECT_PERIOD_SECOND, types.SIMCONNECT_DATA_REQUEST_FLAG_CHANGED, 0, 0, 0)
 	if err != nil {
 		m.logDebug("Failed to request simvar data:", err)
+	}
+	if err2 != nil {
+		m.logDebug("Failed to request environment data:", err2)
 	}
 	m.logInfo("[SimConnectManager] Connected successfully.")
 	m.state = Online
@@ -258,7 +301,8 @@ func (m *SimConnectManager) listen() {
 			}
 		case types.SIMCONNECT_RECV_ID_SIMOBJECT_DATA:
 			if data, ok := message.Data.(*types.SIMCONNECT_RECV_SIMOBJECT_DATA); ok {
-				if data.DwDefineID == 1 {
+				switch data.DwDefineID {
+				case 1:
 					airplaneData := (*AirplaneData)(unsafe.Pointer(&data.DwData))
 					// Convert [256]byte TITLE field to string (remove null terminators)
 					title := string(airplaneData.Title[:])
@@ -277,8 +321,27 @@ func (m *SimConnectManager) listen() {
 					m.airplaneState.Airspeed = airplaneData.Airspeed
 					m.airplaneState.OnGround = airplaneData.OnGround > 0.5
 
-					fmt.Printf("[SimConnectManager] TITLE: %s\n", title)
 					m.logInfo("AirplaneState: ", m.airplaneState)
+				case 2:
+					envData := (*EnvironmentData)(unsafe.Pointer(&data.DwData))
+					m.environmentState.ZuluTime = envData.ZuluTime
+					m.environmentState.LocalTime = envData.LocalTime
+					m.environmentState.SimTime = envData.SimTime
+					m.environmentState.ZuluDay = envData.ZuluDay
+					m.environmentState.ZuluMonth = envData.ZuluMonth
+					m.environmentState.ZuluYear = envData.ZuluYear
+					m.environmentState.LocalDay = envData.LocalDay
+					m.environmentState.LocalMonth = envData.LocalMonth
+					m.environmentState.LocalYear = envData.LocalYear
+					m.environmentState.ZuluDayOfWeek = envData.ZuluDayOfWeek
+					m.environmentState.LocalDayOfWeek = envData.LocalDayOfWeek
+
+					fmt.Printf("[SimConnectManager] ENV: ZuluTime=%d, LocalTime=%d, SimTime=%d, ZuluDay=%d, ZuluMonth=%d, ZuluYear=%d, LocalDay=%d, LocalMonth=%d, LocalYear=%d, ZuluDayOfWeek=%d, LocalDayOfWeek=%d\n",
+						int(envData.ZuluTime), int(envData.LocalTime), int(envData.SimTime),
+						int(envData.ZuluDay), int(envData.ZuluMonth), int(envData.ZuluYear),
+						int(envData.LocalDay), int(envData.LocalMonth), int(envData.LocalYear),
+						int(envData.ZuluDayOfWeek), int(envData.LocalDayOfWeek))
+					m.logInfo("EnvironmentState: ", m.environmentState)
 				}
 			}
 		}
