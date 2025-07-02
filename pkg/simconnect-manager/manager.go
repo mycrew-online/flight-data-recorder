@@ -322,6 +322,12 @@ func (m *SimConnectManager) listen() {
 					m.airplaneState.OnGround = airplaneData.OnGround > 0.5
 
 					m.logInfo("AirplaneState: ", m.airplaneState)
+					// Emit airplane state to frontend
+					if m.wailsCtx != nil {
+						go func(state AirplaneState) {
+							runtime.EventsEmit(m.wailsCtx, "airplane::state", state)
+						}(m.airplaneState)
+					}
 				case 2:
 					envData := (*EnvironmentData)(unsafe.Pointer(&data.DwData))
 					m.environmentState.ZuluTime = envData.ZuluTime
@@ -336,12 +342,13 @@ func (m *SimConnectManager) listen() {
 					m.environmentState.ZuluDayOfWeek = envData.ZuluDayOfWeek
 					m.environmentState.LocalDayOfWeek = envData.LocalDayOfWeek
 
-					fmt.Printf("[SimConnectManager] ENV: ZuluTime=%d, LocalTime=%d, SimTime=%d, ZuluDay=%d, ZuluMonth=%d, ZuluYear=%d, LocalDay=%d, LocalMonth=%d, LocalYear=%d, ZuluDayOfWeek=%d, LocalDayOfWeek=%d\n",
-						int(envData.ZuluTime), int(envData.LocalTime), int(envData.SimTime),
-						int(envData.ZuluDay), int(envData.ZuluMonth), int(envData.ZuluYear),
-						int(envData.LocalDay), int(envData.LocalMonth), int(envData.LocalYear),
-						int(envData.ZuluDayOfWeek), int(envData.LocalDayOfWeek))
 					m.logInfo("EnvironmentState: ", m.environmentState)
+					// Emit environment state to frontend
+					if m.wailsCtx != nil {
+						go func(state EnvironmentState) {
+							runtime.EventsEmit(m.wailsCtx, "environment::state", state)
+						}(m.environmentState)
+					}
 				}
 			}
 		}
@@ -357,6 +364,11 @@ func (m *SimConnectManager) listen() {
 // GetAirplaneState returns a copy of the current airplane state
 func (m *SimConnectManager) GetAirplaneState() AirplaneState {
 	return m.airplaneState
+}
+
+// GetEnvironmentState returns a copy of the current environment state
+func (m *SimConnectManager) GetEnvironmentState() EnvironmentState {
+	return m.environmentState
 }
 
 func (m *SimConnectManager) setConnected(val bool) {

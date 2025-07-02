@@ -55,6 +55,13 @@ func (a *App) GetSimStatus() bool {
 }
 
 // GetAirplaneState returns the current airplane state from the SimConnect manager
+
+// GetEnvironmentState returns the current environment state from the SimConnect manager
+func (a *App) GetEnvironmentState() interface{} {
+	// Return as interface{} for Wails binding (or use EnvironmentState if Wails supports it directly)
+	return a.simconnect.GetEnvironmentState()
+}
+
 func (a *App) GetAirplaneState() interface{} {
 	// Return as interface{} for Wails binding (or use AirplaneState if Wails supports it directly)
 	return a.simconnect.GetAirplaneState()
