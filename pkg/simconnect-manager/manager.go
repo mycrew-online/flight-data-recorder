@@ -17,16 +17,18 @@ import (
 
 // AirplaneData matches the simvar order and types for SimConnect data definition
 type AirplaneData struct {
-	Latitude  float64 // radians
-	Longitude float64 // radians
-	Altitude  float64 // feet
-	Heading   float64 // radians
-	Airspeed  float64 // knots
-	OnGround  float64 // bool as float64 (0/1)
+	Title     [256]byte // string256, units: blank
+	Latitude  float64   // radians
+	Longitude float64   // radians
+	Altitude  float64   // feet
+	Heading   float64   // radians
+	Airspeed  float64   // knots
+	OnGround  float64   // bool as float64 (0/1)
 }
 
 // AirplaneState holds the main simvars to be monitored and is extensible for future fields
 type AirplaneState struct {
+	Title     string  `json:"title"`
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
 	Altitude  float64 `json:"altitude"`
@@ -164,12 +166,13 @@ func (m *SimConnectManager) connect() {
 	}
 	// Register simvar data definition (matches AirplaneData struct)
 	defineID := 1
-	_ = m.client.AddToDataDefinition(defineID, "PLANE LATITUDE", "radians", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 0)
-	_ = m.client.AddToDataDefinition(defineID, "PLANE LONGITUDE", "radians", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 1)
-	_ = m.client.AddToDataDefinition(defineID, "PLANE ALTITUDE", "feet", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 2)
-	_ = m.client.AddToDataDefinition(defineID, "PLANE HEADING DEGREES TRUE", "radians", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 3)
-	_ = m.client.AddToDataDefinition(defineID, "AIRSPEED INDICATED", "knots", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 4)
-	_ = m.client.AddToDataDefinition(defineID, "SIM ON GROUND", "bool", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 5)
+	_ = m.client.AddToDataDefinition(defineID, "TITLE", "", types.SIMCONNECT_DATATYPE_STRING256, 0.0, 0)
+	_ = m.client.AddToDataDefinition(defineID, "PLANE LATITUDE", "radians", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 1)
+	_ = m.client.AddToDataDefinition(defineID, "PLANE LONGITUDE", "radians", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 2)
+	_ = m.client.AddToDataDefinition(defineID, "PLANE ALTITUDE", "feet", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 3)
+	_ = m.client.AddToDataDefinition(defineID, "PLANE HEADING DEGREES TRUE", "radians", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 4)
+	_ = m.client.AddToDataDefinition(defineID, "AIRSPEED INDICATED", "knots", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 5)
+	_ = m.client.AddToDataDefinition(defineID, "SIM ON GROUND", "bool", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 6)
 	// Request data on user aircraft every sim frame
 	err = m.client.RequestDataOnSimObject(1, defineID, 0, types.SIMCONNECT_PERIOD_SECOND, types.SIMCONNECT_DATA_REQUEST_FLAG_CHANGED, 0, 0, 0)
 	if err != nil {
@@ -257,13 +260,24 @@ func (m *SimConnectManager) listen() {
 			if data, ok := message.Data.(*types.SIMCONNECT_RECV_SIMOBJECT_DATA); ok {
 				if data.DwDefineID == 1 {
 					airplaneData := (*AirplaneData)(unsafe.Pointer(&data.DwData))
-					// Convert radians to degrees for lat/lon/heading
+					// Convert [256]byte TITLE field to string (remove null terminators)
+					title := string(airplaneData.Title[:])
+					for i := range airplaneData.Title {
+						if airplaneData.Title[i] == 0 {
+							title = string(airplaneData.Title[:i])
+							break
+						}
+					}
+					// Assign to AirplaneState
+					m.airplaneState.Title = title
 					m.airplaneState.Latitude = airplaneData.Latitude * 180.0 / math.Pi
 					m.airplaneState.Longitude = airplaneData.Longitude * 180.0 / math.Pi
 					m.airplaneState.Altitude = airplaneData.Altitude
 					m.airplaneState.Heading = airplaneData.Heading * 180.0 / math.Pi
 					m.airplaneState.Airspeed = airplaneData.Airspeed
 					m.airplaneState.OnGround = airplaneData.OnGround > 0.5
+
+					fmt.Printf("[SimConnectManager] TITLE: %s\n", title)
 					m.logInfo("AirplaneState: ", m.airplaneState)
 				}
 			}
