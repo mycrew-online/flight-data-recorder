@@ -3,8 +3,10 @@ package simconnectmanager
 import (
 	"context"
 	"fmt"
+	"math"
 	"sync"
 	"time"
+	"unsafe"
 
 	logz "github.com/mrlm-net/go-logz/pkg/logger"
 	"github.com/mrlm-net/simconnect/pkg/client"
@@ -12,6 +14,27 @@ import (
 	"github.com/mycrew-online/flight-data-recorder/internal/logadapter"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
+
+// AirplaneData matches the simvar order and types for SimConnect data definition
+type AirplaneData struct {
+	Latitude  float64 // radians
+	Longitude float64 // radians
+	Altitude  float64 // feet
+	Heading   float64 // radians
+	Airspeed  float64 // knots
+	OnGround  float64 // bool as float64 (0/1)
+}
+
+// AirplaneState holds the main simvars to be monitored and is extensible for future fields
+type AirplaneState struct {
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+	Altitude  float64 `json:"altitude"`
+	Heading   float64 `json:"heading"`
+	Airspeed  float64 `json:"airspeed"`
+	OnGround  bool    `json:"on_ground"`
+	// Add more fields as needed for future extension
+}
 
 const simStateRequestID uint32 = 1001
 
@@ -38,15 +61,16 @@ func (s *SimulatorState) GetSim() int {
 // ...implement Pause, Crashed, View similarly if needed...
 
 type SimConnectManager struct {
-	client   *client.Engine
-	state    int
-	stateMu  sync.Mutex
-	stopCh   chan struct{}
-	stopped  sync.WaitGroup
-	statusCh chan bool // true=connected, false=disconnected
-	logger   *logadapter.LogzWailsAdapter
-	simState SimulatorState
-	wailsCtx context.Context // Wails context for event emission
+	client        *client.Engine
+	state         int
+	stateMu       sync.Mutex
+	stopCh        chan struct{}
+	stopped       sync.WaitGroup
+	statusCh      chan bool // true=connected, false=disconnected
+	logger        *logadapter.LogzWailsAdapter
+	simState      SimulatorState
+	airplaneState AirplaneState
+	wailsCtx      context.Context // Wails context for event emission
 }
 
 // SetLogger allows injection of a custom logger (Wails/go-logz adapter)
@@ -128,7 +152,7 @@ func (m *SimConnectManager) StopConnection() {
 
 func (m *SimConnectManager) connect() {
 	m.logInfo("[SimConnectManager] Attempting to connect...")
-	m.client = client.New("wails")
+	m.client = client.New("MyCrew.online FDR")
 	err := m.client.Connect()
 	m.stateMu.Lock()
 	defer m.stateMu.Unlock()
@@ -137,6 +161,19 @@ func (m *SimConnectManager) connect() {
 		m.state = Offline
 		m.setConnected(false)
 		return
+	}
+	// Register simvar data definition (matches AirplaneData struct)
+	defineID := 1
+	_ = m.client.AddToDataDefinition(defineID, "PLANE LATITUDE", "radians", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 0)
+	_ = m.client.AddToDataDefinition(defineID, "PLANE LONGITUDE", "radians", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 1)
+	_ = m.client.AddToDataDefinition(defineID, "PLANE ALTITUDE", "feet", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 2)
+	_ = m.client.AddToDataDefinition(defineID, "PLANE HEADING DEGREES TRUE", "radians", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 3)
+	_ = m.client.AddToDataDefinition(defineID, "AIRSPEED INDICATED", "knots", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 4)
+	_ = m.client.AddToDataDefinition(defineID, "SIM ON GROUND", "bool", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 5)
+	// Request data on user aircraft every sim frame
+	err = m.client.RequestDataOnSimObject(1, defineID, 0, types.SIMCONNECT_PERIOD_SECOND, types.SIMCONNECT_DATA_REQUEST_FLAG_CHANGED, 0, 0, 0)
+	if err != nil {
+		m.logDebug("Failed to request simvar data:", err)
 	}
 	m.logInfo("[SimConnectManager] Connected successfully.")
 	m.state = Online
@@ -216,7 +253,20 @@ func (m *SimConnectManager) listen() {
 					lastSimStateResponse = time.Now()
 				}
 			}
-			// Add more cases for other message types as needed
+		case types.SIMCONNECT_RECV_ID_SIMOBJECT_DATA:
+			if data, ok := message.Data.(*types.SIMCONNECT_RECV_SIMOBJECT_DATA); ok {
+				if data.DwDefineID == 1 {
+					airplaneData := (*AirplaneData)(unsafe.Pointer(&data.DwData))
+					// Convert radians to degrees for lat/lon/heading
+					m.airplaneState.Latitude = airplaneData.Latitude * 180.0 / math.Pi
+					m.airplaneState.Longitude = airplaneData.Longitude * 180.0 / math.Pi
+					m.airplaneState.Altitude = airplaneData.Altitude
+					m.airplaneState.Heading = airplaneData.Heading * 180.0 / math.Pi
+					m.airplaneState.Airspeed = airplaneData.Airspeed
+					m.airplaneState.OnGround = airplaneData.OnGround > 0.5
+					m.logInfo("AirplaneState: ", m.airplaneState)
+				}
+			}
 		}
 		// Check for missed heartbeat
 		if !lastSimStateResponse.IsZero() && time.Since(lastSimStateResponse) > responseTimeout {
@@ -225,6 +275,11 @@ func (m *SimConnectManager) listen() {
 			return
 		}
 	}
+}
+
+// GetAirplaneState returns a copy of the current airplane state
+func (m *SimConnectManager) GetAirplaneState() AirplaneState {
+	return m.airplaneState
 }
 
 func (m *SimConnectManager) setConnected(val bool) {

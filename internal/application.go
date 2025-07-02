@@ -53,3 +53,9 @@ func (a *App) Shutdown(ctx context.Context) {
 func (a *App) GetSimStatus() bool {
 	return a.simconnect.Status()
 }
+
+// GetAirplaneState returns the current airplane state from the SimConnect manager
+func (a *App) GetAirplaneState() interface{} {
+	// Return as interface{} for Wails binding (or use AirplaneState if Wails supports it directly)
+	return a.simconnect.GetAirplaneState()
+}
