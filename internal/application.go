@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mycrew-online/flight-data-recorder/internal/logger"
 	simconnectmanager "github.com/mycrew-online/flight-data-recorder/pkg/simconnect-manager"
 )
 
@@ -15,8 +16,10 @@ type App struct {
 
 // NewApp creates a new App application struct
 func NewApp() *App {
+	mgr := simconnectmanager.NewSimConnectManager()
+	mgr.SetLogger(logger.AppLogger)
 	return &App{
-		simconnect: simconnectmanager.NewSimConnectManager(),
+		simconnect: mgr,
 	}
 }
 
@@ -24,7 +27,7 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
-	fmt.Println("App has started")
+	logger.AppLogger.Info("App has started")
 
 	// Start SimConnect connection monitoring
 	a.simconnect.StartConnection()
@@ -33,16 +36,16 @@ func (a *App) Startup(ctx context.Context) {
 	go func() {
 		for status := range a.simconnect.StatusChan() {
 			if status {
-				fmt.Println("SimConnect connection established!")
+				logger.AppLogger.Info("SimConnect connection established!")
 			} else {
-				fmt.Println("SimConnect disconnected.")
+				logger.AppLogger.Warning("SimConnect disconnected.")
 			}
 		}
 	}()
 }
 
 func (a *App) Shutdown(ctx context.Context) {
-	fmt.Println("App is shutting down")
+	logger.AppLogger.Info("App is shutting down")
 	a.simconnect.StopConnection()
 }
 

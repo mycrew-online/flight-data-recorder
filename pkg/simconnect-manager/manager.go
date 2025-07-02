@@ -2,12 +2,13 @@ package simconnectmanager
 
 import (
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
+	logz "github.com/mrlm-net/go-logz/pkg/logger"
 	"github.com/mrlm-net/simconnect/pkg/client"
 	"github.com/mrlm-net/simconnect/pkg/types"
+	"github.com/mycrew-online/flight-data-recorder/internal/logadapter"
 )
 
 const simStateRequestID uint32 = 1001
@@ -41,8 +42,13 @@ type SimConnectManager struct {
 	stopCh   chan struct{}
 	stopped  sync.WaitGroup
 	statusCh chan bool // true=connected, false=disconnected
-	logger   Logger    // Optional: interface for logging, fallback to log package if nil
+	logger   *logadapter.LogzWailsAdapter
 	simState SimulatorState
+}
+
+// SetLogger allows injection of a custom logger (Wails/go-logz adapter)
+func (m *SimConnectManager) SetLogger(logger *logadapter.LogzWailsAdapter) {
+	m.logger = logger
 }
 
 const (
@@ -51,15 +57,27 @@ const (
 	Online
 )
 
-type Logger interface {
-	Info(args ...interface{})
-	Debug(args ...interface{})
-}
+// type Logger interface {
+//    Info(args ...interface{})
+//    Debug(args ...interface{})
+//    Warning(args ...interface{})
+//    Error(args ...interface{})
+//    Fatal(args ...interface{})
 
 func NewSimConnectManager() *SimConnectManager {
+	// Create a go-logz logger instance
+	lz := logz.NewLogger(logz.LogOptions{
+		Level:   logz.Debug,
+		Format:  logz.StringOutput,
+		Prefix:  "SimConnectManager",
+		Outputs: []logz.OutputFunc{logz.ConsoleOutput()},
+	})
+	// Wrap it with the Wails-compatible adapter
+	adapter := logadapter.New(lz)
 	return &SimConnectManager{
 		stopCh:   make(chan struct{}),
 		statusCh: make(chan bool, 1),
+		logger:   adapter,
 	}
 }
 
@@ -220,16 +238,14 @@ func (m *SimConnectManager) StatusChan() <-chan bool {
 
 func (m *SimConnectManager) logInfo(args ...interface{}) {
 	if m.logger != nil {
-		m.logger.Info(args...)
-	} else {
-		log.Println(args...)
+		msg := fmt.Sprint(args...)
+		m.logger.Info(msg)
 	}
 }
 
 func (m *SimConnectManager) logDebug(args ...interface{}) {
 	if m.logger != nil {
-		m.logger.Debug(args...)
-	} else {
-		log.Println(args...)
+		msg := fmt.Sprint(args...)
+		m.logger.Debug(msg)
 	}
 }
