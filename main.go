@@ -11,9 +11,10 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 )
 
-//go:embed all:website/dist
+//go:embed all:website/build
 var assets embed.FS
 
+// added comment to trigger rebuild
 func main() {
 	// Create an instance of the app structure
 	app := internal.NewApp()

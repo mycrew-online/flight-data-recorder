@@ -120,7 +120,7 @@ func (m *SimConnectManager) StopConnection() {
 
 func (m *SimConnectManager) connect() {
 	m.logInfo("[SimConnectManager] Attempting to connect...")
-	m.client = client.New("FlightDataRecorder")
+	m.client = client.New("wails")
 	err := m.client.Connect()
 	m.stateMu.Lock()
 	defer m.stateMu.Unlock()
