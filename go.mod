@@ -2,7 +2,10 @@ module github.com/mycrew-online/flight-data-recorder
 
 go 1.23
 
-require github.com/wailsapp/wails/v2 v2.10.1
+require (
+	github.com/mrlm-net/simconnect v0.0.0-20250629095241-94f37ffbd912
+	github.com/wailsapp/wails/v2 v2.10.1
+)
 
 require (
 	github.com/bep/debounce v1.2.1 // indirect
