@@ -8,6 +8,7 @@
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
+  "wailsjsdir": "website/src/lib",
   "author": {
     "name": "Martin Hrášek",
     "email": "martin@hrasek.email"

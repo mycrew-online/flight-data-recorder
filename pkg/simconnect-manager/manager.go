@@ -1,6 +1,7 @@
 package simconnectmanager
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/mrlm-net/simconnect/pkg/client"
 	"github.com/mrlm-net/simconnect/pkg/types"
 	"github.com/mycrew-online/flight-data-recorder/internal/logadapter"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 const simStateRequestID uint32 = 1001
@@ -44,11 +46,17 @@ type SimConnectManager struct {
 	statusCh chan bool // true=connected, false=disconnected
 	logger   *logadapter.LogzWailsAdapter
 	simState SimulatorState
+	wailsCtx context.Context // Wails context for event emission
 }
 
 // SetLogger allows injection of a custom logger (Wails/go-logz adapter)
 func (m *SimConnectManager) SetLogger(logger *logadapter.LogzWailsAdapter) {
 	m.logger = logger
+}
+
+// SetWailsContext sets the Wails context for event emission
+func (m *SimConnectManager) SetWailsContext(ctx context.Context) {
+	m.wailsCtx = ctx
 }
 
 const (
@@ -223,6 +231,15 @@ func (m *SimConnectManager) setConnected(val bool) {
 	select {
 	case m.statusCh <- val:
 	default:
+	}
+	// Emit Wails event if context is set
+	if m.wailsCtx != nil {
+		// Use the Wails runtime to emit an event
+		// Event name: "global::sim-status", Data: val (bool)
+		go func(v bool) {
+			// Avoid blocking
+			runtime.EventsEmit(m.wailsCtx, "global::sim-status", v)
+		}(val)
 	}
 }
 

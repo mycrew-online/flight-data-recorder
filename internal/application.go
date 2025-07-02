@@ -2,7 +2,6 @@ package internal
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/mycrew-online/flight-data-recorder/internal/logger"
 	simconnectmanager "github.com/mycrew-online/flight-data-recorder/pkg/simconnect-manager"
@@ -27,6 +26,7 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
+	a.simconnect.SetWailsContext(ctx)
 	logger.AppLogger.Info("App has started")
 
 	// Start SimConnect connection monitoring
@@ -49,7 +49,7 @@ func (a *App) Shutdown(ctx context.Context) {
 	a.simconnect.StopConnection()
 }
 
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
+// GetSimStatus returns the current SimConnect connection status
+func (a *App) GetSimStatus() bool {
+	return a.simconnect.Status()
 }
