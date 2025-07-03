@@ -41,8 +41,8 @@ function formatLocalDate(year: number | undefined, month: number | undefined, da
 {#if !$simStatus}
     <img src="/hero-image.jpg" alt="" class="fixed inset-0 -z-10 w-full h-full object-cover object-top" />
     <div class="w-full px-6 py-32 text-center sm:py-40 lg:px-8">
-        <span class="inline-block rounded-full bg-rose-100/80 px-4 py-1 text-base font-semibold text-rose-700 shadow-md mb-4">No Connection</span>
-        <h1 class="mt-4 text-5xl font-extrabold tracking-tight text-balance text-white drop-shadow-lg sm:text-7xl">Simulator Not Connected</h1>
+        <span class="inline-block rounded-full bg-rose-100/80 px-4 py-1 text-base font-semibold text-rose-700 shadow-md mb-4">Is your simulator running?</span>
+        <h1 class="mt-4 text-5xl font-extrabold tracking-tight text-balance text-white drop-shadow-lg sm:text-7xl">Not Connected</h1>
         <p class="mt-6 text-lg font-medium text-pretty text-slate-200/90 sm:text-xl/8 drop-shadow">The application is not connected to the simulator.<br>Start the simulator and ensure SimConnect is available.</p>
     </div>
     {:else}
