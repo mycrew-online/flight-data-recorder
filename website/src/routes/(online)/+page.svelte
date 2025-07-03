@@ -28,6 +28,25 @@ function formatLocalTime(localTime: number | undefined | null): string {
     .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
+// Helper: Convert seconds since midnight to HH:MM (no seconds)
+function formatTimeHHMM(seconds: number | undefined | null): string {
+  if (typeof seconds !== 'number' || isNaN(seconds)) return '';
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+}
+
+// Helper: Convert Zulu time (seconds since midnight) to local time (seconds since midnight), then format as HH:MM
+function zuluToLocalTime(zuluSeconds: number | undefined | null, offset: number | undefined | null): string {
+  if (typeof zuluSeconds !== 'number' || isNaN(zuluSeconds) || typeof offset !== 'number' || isNaN(offset)) return '';
+  // offset is in seconds, positive east of GMT, negative west
+  let localSeconds = zuluSeconds - offset;
+  // wrap around 0-86399
+  if (localSeconds < 0) localSeconds += 86400;
+  if (localSeconds >= 86400) localSeconds -= 86400;
+  return formatTimeHHMM(localSeconds);
+}
+
 // Helper: Format local date as DD.MM.YYYY
 function formatLocalDate(year: number | undefined, month: number | undefined, day: number | undefined): string {
   if (!year || !month || !day) return '';
@@ -49,7 +68,7 @@ function formatLocalDate(year: number | undefined, month: number | undefined, da
         </div>
     </div>
     {:else}
-    <div class="lg:flex lg:items-center lg:justify-between">
+    <div class="lg:flex lg:items-start lg:justify-between">
         <div class="min-w-0 flex-1">
             <h2 class="text-2xl/7 font-bold text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">{$airplaneState?.title}</h2>
             <div class="mt-1 flex flex-col sm:mt-0 sm:flex-row sm:flex-wrap sm:space-x-6">
@@ -66,6 +85,25 @@ function formatLocalDate(year: number | undefined, month: number | undefined, da
                 </svg>
                 {formatLocalDate($environmentState?.local_year, $environmentState?.local_month, $environmentState?.local_day)}
                 <span>&nbsp;{formatLocalTime($environmentState?.local_time)}</span>
+            </div>
+
+            <!-- Timezone and Zulu Sun Times -->
+            <div class="mt-2 flex items-center text-sm text-gray-500">
+                <svg class="mr-1.5 size-5 shrink-0 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <title>Timezone Offset</title>
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm0-14.5A6.5 6.5 0 1 1 3.5 10 6.508 6.508 0 0 1 10 3.5Zm.75 3.75a.75.75 0 0 0-1.5 0v3.25a.75.75 0 0 0 .22.53l2.25 2.25a.75.75 0 1 0 1.06-1.06l-2.03-2.03V7.25Z" clip-rule="evenodd" />
+                </svg>
+                <span>GMT{($environmentState?.time_zone_offset != null ? ((-$environmentState.time_zone_offset / 3600) >= 0 ? '+' : '') + (-$environmentState.time_zone_offset / 3600) : '')}</span>
+                <svg class="ml-4 mr-1.5 size-5 shrink-0 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <title>Zulu Sunrise</title>
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm0-14.5A6.5 6.5 0 1 1 3.5 10 6.508 6.508 0 0 1 10 3.5Zm.75 3.75a.75.75 0 0 0-1.5 0v3.25a.75.75 0 0 0 .22.53l2.25 2.25a.75.75 0 1 0 1.06-1.06l-2.03-2.03V7.25Z" clip-rule="evenodd" />
+                </svg>
+                <span>Sunrise: {zuluToLocalTime($environmentState?.zulu_sunrise_time, $environmentState?.time_zone_offset)}</span>
+                <svg class="ml-4 mr-1.5 size-5 shrink-0 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <title>Zulu Sunset</title>
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm0-14.5A6.5 6.5 0 1 1 3.5 10 6.508 6.508 0 0 1 10 3.5Zm.75 3.75a.75.75 0 0 0-1.5 0v3.25a.75.75 0 0 0 .22.53l2.25 2.25a.75.75 0 1 0 1.06-1.06l-2.03-2.03V7.25Z" clip-rule="evenodd" />
+                </svg>
+                <span>Sunset: {zuluToLocalTime($environmentState?.zulu_sunset_time, $environmentState?.time_zone_offset)}</span>
             </div>
 
             </div>

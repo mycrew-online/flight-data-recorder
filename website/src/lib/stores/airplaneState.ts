@@ -9,6 +9,11 @@ export interface AirplaneState {
   altitude: number;
   heading: number;
   airspeed: number;
+  heading_magnetic: number; // Added magnetic heading
+  bank: number;
+  alt_above_ground: number;
+  pitch: number;
+  vertical_speed: number; // Changed to number for consistency
   // Add other properties as needed from your backend
 }
 

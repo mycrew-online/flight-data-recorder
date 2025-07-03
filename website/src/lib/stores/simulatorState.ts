@@ -3,13 +3,15 @@ import { EventsOn } from '$lib/wailsjs/runtime/runtime';
 import { GetSimulatorState } from '$lib/wailsjs/go/internal/App';
 
 export interface SimulatorState {
-  Sim: number;
-  Pause: number;
-  Crashed: number;
-  View: number;
-  AircraftLoaded: string;
-  FlightLoaded: string;
-  FlightPlan: string;
+  sim: number;
+  pause: number;
+  crashed: number;
+  view: number;
+  aircraft_loaded: string;
+  flight_loaded: string;
+  flight_plan: string;
+  simulation_rate: number;
+  realism: number;
 }
 
 export const simulatorState = writable<SimulatorState>();

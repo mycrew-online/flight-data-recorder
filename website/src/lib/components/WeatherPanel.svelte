@@ -41,7 +41,7 @@ function formatVisibility(val: number | undefined | null): string {
 // Derived store for easier destructuring
 const env = derived(environmentState, ($env) => $env ?? {});
 
-$: seaLevelPressureInHg = $environmentState.sea_level_pressure;
+$: seaLevelPressureInHg = $environmentState?.sea_level_pressure;
 $: seaLevelPressureInHgParts = typeof seaLevelPressureInHg === 'number' ? splitDecimal(seaLevelPressureInHg, 2) : null;
 $: seaLevelPressure = typeof seaLevelPressureInHg === 'number' ? inHgTohPa(seaLevelPressureInHg) : null;
 $: seaLevelPressureParts = typeof seaLevelPressure === 'number' ? [seaLevelPressure.toFixed(0), ''] : null;
@@ -53,7 +53,6 @@ $: ambientTempFParts = typeof ambientTempF === 'number' ? splitInt(ambientTempF)
 </script>
 
 <div>
-  <h3 class="text-base font-semibold text-gray-900">Weather Information</h3>
   <dl class="mt-5 grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow-sm md:grid-cols-4 md:divide-x md:divide-y-0">
     <!-- Sea Level Pressure -->
     <div class="px-4 py-5 sm:p-6">

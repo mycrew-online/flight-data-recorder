@@ -19,6 +19,11 @@ export interface EnvironmentState {
   zulu_month: number;
   zulu_time: number;
   zulu_year: number;
+  // New simvars
+  time_zone_offset: number;
+  zulu_sunrise_time: number;
+  zulu_sunset_time: number;
+  time_of_day: number; // 0=dawn, 1=day, 2=dusk, 3=night
 }
 
 export const environmentState = writable<EnvironmentState>();

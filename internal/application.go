@@ -71,3 +71,8 @@ func (a *App) GetAirplaneState() interface{} {
 func (a *App) GetSimulatorState() interface{} {
 	return a.simconnect.GetSimulatorState()
 }
+
+// Toggle Pause
+func (a *App) TogglePause() {
+	a.simconnect.TogglePause()
+}

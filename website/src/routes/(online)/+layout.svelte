@@ -6,6 +6,7 @@
   const { children } = $props();
   let sidebarOpen = $state(false);
 
+
 </script>
 
 <div class="h-full bg-gray-100 min-h-screen">
@@ -147,15 +148,31 @@
         <div class="flex flex-1 items-center justify-end gap-4">
           {#if $simulatorState}
             <span class="ml-2 flex items-center">
-              {#if $simulatorState.Pause === 1}
-                <svg class="size-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                  <title>Paused</title>
+              {#if $simulatorState.pause === 1}
+                <svg
+                  class="size-6 text-yellow-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                >
+                  <title>
+                    Paused{typeof $simulatorState.realism === 'number' ? `\nRealism: ${($simulatorState.realism * 100).toFixed(0)}%` : ''}{typeof $simulatorState.simulation_rate === 'number' ? `\nRate: ${$simulatorState.simulation_rate}` : ''}
+                  </title>
                   <rect x="6" y="4" width="3" height="16" rx="1" fill="currentColor" />
                   <rect x="15" y="4" width="3" height="16" rx="1" fill="currentColor" />
                 </svg>
               {:else}
-                <svg class="size-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                  <title>Running</title>
+                <svg
+                  class="size-6 text-emerald-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                >
+                  <title>
+                    Running{typeof $simulatorState.realism === 'number' ? `\nRealism: ${($simulatorState.realism * 100).toFixed(0)}%` : ''}{typeof $simulatorState.simulation_rate === 'number' ? `\nRate: ${$simulatorState.simulation_rate}` : ''}
+                  </title>
                   <polygon points="6,4 20,12 6,20" fill="currentColor" />
                 </svg>
               {/if}
