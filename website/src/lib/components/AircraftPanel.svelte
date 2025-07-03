@@ -1,0 +1,62 @@
+<script lang="ts">
+import { airplaneState } from '$lib/stores/airplaneState';
+import { BrowserOpenURL } from '$lib/wailsjs/runtime/runtime';
+
+// Helper to split a number into integer and decimal parts as strings
+function splitDecimal(val: number, digits = 5): [string, string] {
+  const [intPart, decPart] = val.toFixed(digits).split('.')
+  return [intPart, decPart];
+}
+
+function openInGoogleMaps(lat: number, long: number) {
+  const url = `https://maps.google.com/?q=${lat},${long}`;
+  BrowserOpenURL(url);
+}
+</script>
+
+<dl class="mt-5 grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow-sm md:grid-cols-4 md:divide-x md:divide-y-0">
+  <div class="px-4 py-5 sm:p-6">
+    <dt class="text-base font-normal text-gray-900">Latitude / Longitude</dt>
+    <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
+      <div class="flex items-baseline text-2xl font-semibold text-indigo-600">
+        {#if typeof $airplaneState?.latitude === 'number' && typeof $airplaneState?.longitude === 'number'}
+          <button class="cursor-pointer focus:outline-none text-indigo-600" title="Open in Google Maps" on:click={() => openInGoogleMaps($airplaneState.latitude, $airplaneState.longitude)}>
+            {#await Promise.resolve(splitDecimal($airplaneState.latitude)) then latParts}
+              {#await Promise.resolve(splitDecimal($airplaneState.longitude)) then lonParts}
+                <span>{latParts[0]}<span class="relative text-[.55em]" style="top:0">.{latParts[1]}</span></span>
+                <span class="mx-1">/</span>
+                <span>{lonParts[0]}<span class="relative text-[.55em]" style="top:0">.{lonParts[1]}</span></span>
+              {/await}
+            {/await}
+          </button>
+        {:else}
+          <span>-/-</span>
+        {/if}
+      </div>
+    </dd>
+  </div>
+  <div class="px-4 py-5 sm:p-6">
+    <dt class="text-base font-normal text-gray-900">Altitude (ft)</dt>
+    <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
+      <div class="flex items-baseline text-2xl font-semibold text-indigo-600">
+        {typeof $airplaneState?.altitude === 'number' ? $airplaneState.altitude.toLocaleString(undefined, {maximumFractionDigits: 0}) : '-'}
+      </div>
+    </dd>
+  </div>
+  <div class="px-4 py-5 sm:p-6">
+    <dt class="text-base font-normal text-gray-900">Heading (°)</dt>
+    <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
+      <div class="flex items-baseline text-2xl font-semibold text-indigo-600">
+        {typeof $airplaneState?.heading === 'number' ? $airplaneState.heading.toFixed(0) : '-'}
+      </div>
+    </dd>
+  </div>
+  <div class="px-4 py-5 sm:p-6">
+    <dt class="text-base font-normal text-gray-900">Airspeed (kt)</dt>
+    <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
+      <div class="flex items-baseline text-2xl font-semibold text-indigo-600">
+        {typeof $airplaneState?.airspeed === 'number' ? $airplaneState.airspeed.toFixed(0) : '-'}
+      </div>
+    </dd>
+  </div>
+</dl>

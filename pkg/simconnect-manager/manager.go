@@ -527,6 +527,12 @@ func (m *SimConnectManager) GetEnvironmentState() EnvironmentState {
 	return m.environmentState
 }
 
+func (m *SimConnectManager) GetSimulatorState() SimulatorState {
+	m.simState.mu.RLock()
+	defer m.simState.mu.RUnlock()
+	return m.simState
+}
+
 func (m *SimConnectManager) setConnected(val bool) {
 	select {
 	case m.statusCh <- val:

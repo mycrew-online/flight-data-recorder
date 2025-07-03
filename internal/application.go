@@ -66,3 +66,8 @@ func (a *App) GetAirplaneState() interface{} {
 	// Return as interface{} for Wails binding (or use AirplaneState if Wails supports it directly)
 	return a.simconnect.GetAirplaneState()
 }
+
+// GetSimulatorState returns the current simulator state from the SimConnect manager
+func (a *App) GetSimulatorState() interface{} {
+	return a.simconnect.GetSimulatorState()
+}
