@@ -61,8 +61,7 @@ $: ambientTempFParts = typeof ambientTempF === 'number' ? splitInt(ambientTempF)
       <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
         <div class="flex items-baseline text-2xl font-semibold text-indigo-600">
           {#if seaLevelPressureParts}
-            <span>{seaLevelPressureParts[0]}</span>
-            <span class="ml-1 text-base font-medium text-gray-500">hPa</span>
+            <span>{seaLevelPressureParts[0]}<span class="ml-1">hPa</span></span>
             {#if seaLevelPressureInHgParts}
               <span class="ml-2 text-sm font-medium text-gray-500">{seaLevelPressureInHgParts[0]}.{seaLevelPressureInHgParts[1]} inHg</span>
             {/if}
@@ -78,8 +77,7 @@ $: ambientTempFParts = typeof ambientTempF === 'number' ? splitInt(ambientTempF)
       <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
         <div class="flex items-baseline text-2xl font-semibold text-indigo-600">
           {#if ambientTempParts}
-            <span>{ambientTempParts[0]}</span>
-            <span class="ml-1 text-base font-medium text-gray-500">°C</span>
+            <span>{ambientTempParts[0]}<span class="ml-1">°C</span></span>
             {#if ambientTempFParts}
               <span class="ml-2 text-sm font-medium text-gray-500">{ambientTempFParts[0]} °F</span>
             {/if}

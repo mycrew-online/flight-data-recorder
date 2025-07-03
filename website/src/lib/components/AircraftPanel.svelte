@@ -36,26 +36,47 @@ function openInGoogleMaps(lat: number, long: number) {
     </dd>
   </div>
   <div class="px-4 py-5 sm:p-6">
-    <dt class="text-base font-normal text-gray-900">Altitude (ft)</dt>
+    <dt class="text-base font-normal text-gray-900">Altitude</dt>
     <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
       <div class="flex items-baseline text-2xl font-semibold text-indigo-600">
-        {typeof $airplaneState?.altitude === 'number' ? $airplaneState.altitude.toLocaleString(undefined, {maximumFractionDigits: 0}) : '-'}
+        {#if typeof $airplaneState?.altitude === 'number'}
+          <span>{$airplaneState.altitude.toLocaleString(undefined, {maximumFractionDigits: 0})}<span class="ml-1">ft</span></span>
+          <span class="ml-2 text-sm font-medium text-gray-500">
+            {#if $airplaneState.altitude * 0.3048 >= 1000}
+              {($airplaneState.altitude * 0.3048 / 1000).toFixed(2)} km
+            {:else}
+              {($airplaneState.altitude * 0.3048).toFixed(0)} m
+            {/if}
+          </span>
+        {:else}
+          -
+        {/if}
       </div>
     </dd>
   </div>
   <div class="px-4 py-5 sm:p-6">
-    <dt class="text-base font-normal text-gray-900">Heading (°)</dt>
+    <dt class="text-base font-normal text-gray-900">Heading</dt>
     <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
       <div class="flex items-baseline text-2xl font-semibold text-indigo-600">
-        {typeof $airplaneState?.heading === 'number' ? $airplaneState.heading.toFixed(0) : '-'}
+        {#if typeof $airplaneState?.heading === 'number'}
+          <span>{$airplaneState.heading.toFixed(0)}</span>
+          <span class="ml-1">°</span>
+        {:else}
+          -
+        {/if}
       </div>
     </dd>
   </div>
   <div class="px-4 py-5 sm:p-6">
-    <dt class="text-base font-normal text-gray-900">Airspeed (kt)</dt>
+    <dt class="text-base font-normal text-gray-900">Airspeed</dt>
     <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
       <div class="flex items-baseline text-2xl font-semibold text-indigo-600">
-        {typeof $airplaneState?.airspeed === 'number' ? $airplaneState.airspeed.toFixed(0) : '-'}
+        {#if typeof $airplaneState?.airspeed === 'number'}
+          <span>{$airplaneState.airspeed.toFixed(0)}<span class="ml-1">kt</span></span>
+          <span class="ml-2 text-sm font-medium text-gray-500">{($airplaneState.airspeed * 1.852).toFixed(0)} km/h</span>
+        {:else}
+          -
+        {/if}
       </div>
     </dd>
   </div>

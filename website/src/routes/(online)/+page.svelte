@@ -44,6 +44,9 @@ function formatLocalDate(year: number | undefined, month: number | undefined, da
         <span class="inline-block rounded-full bg-rose-100/80 px-4 py-1 text-base font-semibold text-rose-700 shadow-md mb-4">Is your simulator running?</span>
         <h1 class="mt-4 text-5xl font-extrabold tracking-tight text-balance text-white drop-shadow-lg sm:text-7xl">Not Connected</h1>
         <p class="mt-6 text-lg font-medium text-pretty text-slate-200/90 sm:text-xl/8 drop-shadow">The application is not connected to the simulator.<br>Start the simulator and ensure SimConnect is available.</p>
+        <div class="mt-16 flex justify-center">
+          <a href="/settings" class="inline-flex items-center rounded-lg bg-emerald-500 px-8 py-3 text-lg font-bold text-white shadow-lg hover:bg-emerald-600 focus:outline-none focus:ring-4 focus:ring-emerald-300 focus:ring-offset-2 transition-all duration-200">Go to Settings</a>
+        </div>
     </div>
     {:else}
     <div class="lg:flex lg:items-center lg:justify-between">
@@ -68,13 +71,12 @@ function formatLocalDate(year: number | undefined, month: number | undefined, da
             </div>
         </div>
         <div class="mt-5 flex lg:mt-0 lg:ml-4">
-            <span class="hidden sm:block">
+            <span>
             <button
                 type="button"
                 class="inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold shadow-xs ring-1 ring-inset focus:outline-none transition-colors duration-150
                     bg-green-600 text-white hover:bg-green-700 ring-green-500"
                 aria-pressed={$recordingState === "recording" ? 'true' : 'false'}
-    
             >
                 {#if $recordingState === "recording"}
                     <svg class="mr-1.5 -ml-0.5 size-5 text-red-400 animate-pulse" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">

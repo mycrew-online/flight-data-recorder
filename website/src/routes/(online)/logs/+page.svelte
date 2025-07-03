@@ -10,7 +10,7 @@ console.log('Environment State:', $environmentState);
 console.log('Simulator State:', $simulatorState);
 </script>
 
-<div class="min-h-full isolate relative pb-8">
+<div class="min-h-full isolate relative p-8">
 {#if !$simStatus}
     <img src="/hero-image.jpg" alt="" class="fixed inset-0 -z-10 w-full h-full object-cover object-top" />
     <div class="w-full px-6 py-32 text-center sm:py-40 lg:px-8">
