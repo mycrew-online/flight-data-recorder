@@ -11,7 +11,11 @@ console.log('Simulator State:', $simulatorState);
 </script>
 
 <div class="min-h-full isolate relative p-8">
-    
+    <a href="/settings" aria-label="Go to settings" class="absolute top-4 left-4 z-10 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+        <svg class="size-6" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" />
+        </svg>
+    </a>
     {#if !$simStatus}
         <img src="/hero-image.jpg" alt="" class="fixed inset-0 -z-10 w-full h-full object-cover object-top" />
         <div class="w-full px-6 py-32 text-center sm:py-40 lg:px-8">

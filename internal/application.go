@@ -5,6 +5,7 @@ import (
 
 	"github.com/mycrew-online/flight-data-recorder/internal/logger"
 	simconnectmanager "github.com/mycrew-online/flight-data-recorder/pkg/simconnect-manager"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
@@ -75,4 +76,8 @@ func (a *App) GetSimulatorState() interface{} {
 // Toggle Pause
 func (a *App) TogglePause() {
 	a.simconnect.TogglePause()
+}
+
+func (a *App) RunSimulator() {
+	runtime.BrowserOpenURL(a.ctx, "steam://rungameid/2537590")
 }

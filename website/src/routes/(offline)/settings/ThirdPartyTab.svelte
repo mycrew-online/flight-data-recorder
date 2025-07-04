@@ -2,4 +2,4 @@
 // Blank example tab component
 </script>
 
-<div>General tab content (blank)</div>
+<div>3rd party tab content (blank)</div>

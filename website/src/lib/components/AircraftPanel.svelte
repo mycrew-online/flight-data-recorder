@@ -1,5 +1,8 @@
+
 <script lang="ts">
 import { airplaneState } from '$lib/stores/airplaneState';
+import { environmentState } from '$lib/stores/environmentState';
+import { get } from 'svelte/store';
 import { BrowserOpenURL } from '$lib/wailsjs/runtime/runtime';
 
 // Helper to split a number into integer and decimal parts as strings
@@ -12,6 +15,24 @@ function openInGoogleMaps(lat: number, long: number) {
   const url = `https://maps.google.com/?q=${lat},${long}`;
   BrowserOpenURL(url);
 }
+
+// Helper: Convert Zulu time (seconds since midnight) to local time (seconds since midnight), then format as HH:MM
+function zuluToLocalTime(zuluSeconds: number | undefined | null, offset: number | undefined | null): string {
+  if (typeof zuluSeconds !== 'number' || isNaN(zuluSeconds)) return '-';
+  let localSeconds = zuluSeconds;
+  if (typeof offset === 'number' && !isNaN(offset)) {
+    localSeconds += offset;
+    if (localSeconds < 0) localSeconds += 86400;
+    if (localSeconds >= 86400) localSeconds -= 86400;
+  }
+  const hours = Math.floor(localSeconds / 3600);
+  const minutes = Math.floor((localSeconds % 3600) / 60);
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+}
+
+// Svelte reactive values for environmentState
+$: env = $environmentState;
+// ...existing code...
 </script>
 
 <dl class="mt-5 grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow-sm md:grid-cols-4 md:divide-x md:divide-y-0">
@@ -86,10 +107,8 @@ function openInGoogleMaps(lat: number, long: number) {
       </div>
     </dd>
   </div>
-</dl>
 
-<dl class="mt-5 grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow-sm md:grid-cols-4 md:divide-x md:divide-y-0">
-  <div class="px-4 py-5 sm:p-6">
+  <div class="px-4 py-6 sm:p-6">
     <dt class="text-base font-normal text-gray-900">Bank</dt>
     <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
       <div class="flex items-baseline text-2xl font-semibold text-indigo-600">

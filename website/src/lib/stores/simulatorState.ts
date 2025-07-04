@@ -12,6 +12,12 @@ export interface SimulatorState {
   flight_plan: string;
   simulation_rate: number;
   realism: number;
+  surface_condition: number;
+  surface_info_valid: boolean; // Changed to boolean
+  surface_type: number;
+  on_any_runway: number;
+  in_parking_state: number;
+  on_ground: boolean; // Changed to boolean
 }
 
 export const simulatorState = writable<SimulatorState>();

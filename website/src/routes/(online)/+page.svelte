@@ -108,12 +108,8 @@ function formatLocalDate(year: number | undefined, month: number | undefined, da
           </span>
         {/if}
         {formatSimTime($environmentState?.sim_time)}
-        <!-- Dawn Icon for Sunrise -->
-        <svg class="ml-4 mr-1.5 size-5 shrink-0 text-amber-300" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><title>Zulu Sunrise</title><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v3m0 12v3m9-9h-3M6 12H3m15.364-6.364l-2.121 2.121M6.757 17.243l-2.121 2.121M17.243 17.243l2.121 2.121M6.757 6.757L4.636 4.636M12 7a5 5 0 1 1 0 10a5 5 0 0 1 0-10Z"/></svg>
-        <span>{zuluToLocalTime($environmentState?.zulu_sunrise_time, $environmentState?.time_zone_offset)}</span>
-        <!-- Dusk Icon for Sunset -->
-        <svg class="ml-4 mr-1.5 mt-[-1.5px] size-5 shrink-0 text-orange-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><title>Zulu Sunset</title><path stroke-linecap="round" stroke-linejoin="round" d="M3 17h18M4.5 21h15M12 3v2m0 14v2m9-9h-2M5 12H3m15.364-6.364l-1.414 1.414M6.05 17.95l-1.414 1.414M17.95 17.95l1.414 1.414M6.05 6.05L4.636 4.636"/><circle cx="12" cy="14" r="5" fill="currentColor"/></svg>
-        <span>{zuluToLocalTime($environmentState?.zulu_sunset_time, $environmentState?.time_zone_offset)}</span>
+        <!-- Removed sunrise/sunset from subtitle -->
+  <!-- Add Zulu Sunrise/Sunset to AircraftPanel -->
       </div>
     </div>
   </div>

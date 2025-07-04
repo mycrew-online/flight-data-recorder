@@ -245,6 +245,9 @@ func (m *SimConnectManager) connect() {
 	_ = m.client.AddToDataDefinition(defineID, "PLANE ALT ABOVE GROUND", "feet", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 8)
 	_ = m.client.AddToDataDefinition(defineID, "PLANE PITCH DEGREES", "degrees", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 9)
 	_ = m.client.AddToDataDefinition(defineID, "VERTICAL SPEED", "feet per minute", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 10)
+	_ = m.client.AddToDataDefinition(defineID, "GROUND VELOCITY", "knots", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 11)
+	_ = m.client.AddToDataDefinition(defineID, "AIRSPEED TRUE", "knots", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 12)
+	_ = m.client.AddToDataDefinition(defineID, "ANGLE OF ATTACK INDICATOR", "radians", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 13)
 	// Register environment data definition (matches EnvironmentData struct)
 	envDefineID := 2
 	_ = m.client.AddToDataDefinition(envDefineID, "ZULU TIME", "seconds", types.SIMCONNECT_DATATYPE_INT32, 0.0, 0)
@@ -294,7 +297,7 @@ func (m *SimConnectManager) connect() {
 	_ = m.client.AddToDataDefinition(3, "SIMULATION RATE", "", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 0)
 	_ = m.client.AddToDataDefinition(3, "REALISM", "", types.SIMCONNECT_DATATYPE_INT32, 0.0, 1)
 	_ = m.client.AddToDataDefinition(3, "SURFACE CONDITION", "", types.SIMCONNECT_DATATYPE_INT32, 0.0, 2)
-	_ = m.client.AddToDataDefinition(3, "SURFACE INFO VALID", "", types.SIMCONNECT_DATATYPE_INT32, 0.0, 3)
+	_ = m.client.AddToDataDefinition(3, "SURFACE INFO VALID", "bool", types.SIMCONNECT_DATATYPE_INT32, 0.0, 3)
 	_ = m.client.AddToDataDefinition(3, "SURFACE TYPE", "", types.SIMCONNECT_DATATYPE_INT32, 0.0, 4)
 	_ = m.client.AddToDataDefinition(3, "ON ANY RUNWAY", "", types.SIMCONNECT_DATATYPE_INT32, 0.0, 5)
 	_ = m.client.AddToDataDefinition(3, "PLANE IN PARKING STATE", "", types.SIMCONNECT_DATATYPE_INT32, 0.0, 6)
