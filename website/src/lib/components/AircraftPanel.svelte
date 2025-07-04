@@ -58,12 +58,15 @@ function openInGoogleMaps(lat: number, long: number) {
     <dt class="text-base font-normal text-gray-900">Heading</dt>
     <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
       <div class="flex items-baseline text-2xl font-semibold text-indigo-600">
-        {#if typeof $airplaneState?.heading === 'number'}
-          <span>{$airplaneState.heading.toFixed(0)}</span>
+        {#if typeof $airplaneState?.heading_magnetic === 'number'}
+          <span>{$airplaneState.heading_magnetic.toFixed(0)}</span>
           <span class="ml-1">°</span>
-          {#if typeof $airplaneState.heading_magnetic === 'number'}
-            <span class="ml-2 text-sm font-medium text-gray-500">{$airplaneState.heading_magnetic.toFixed(0)}° MAG</span>
+          {#if typeof $airplaneState.heading === 'number'}
+            <span class="ml-2 text-sm font-medium text-gray-500">{$airplaneState.heading.toFixed(0)}° TRUE</span>
           {/if}
+        {:else if typeof $airplaneState?.heading === 'number'}
+          <span>{$airplaneState.heading.toFixed(0)}</span>
+          <span class="ml-1">° TRUE</span>
         {:else}
           -
         {/if}

@@ -3,6 +3,7 @@
   import { simStatus } from '$lib/stores/simStatus';
   import { page } from '$app/stores';
   import { simulatorState } from '$lib/stores/simulatorState';
+  import { environmentState } from '$lib/stores/environmentState';
   const { children } = $props();
   let sidebarOpen = $state(false);
 
@@ -50,15 +51,6 @@
                       <span class="align-middle">My Flights</span>
                     </a>
                   </li>
-                  <li>
-                    <a href="/logs" class={`group flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold ${$page.url.pathname === '/logs' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`} onclick={() => sidebarOpen = false}>
-                      <!-- Heroicons Document Text -->
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 align-middle">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" />
-                      </svg>
-                      <span class="align-middle">Logs</span>
-                    </a>
-                  </li>
                 </ul>
               </li>
             </ul>
@@ -77,10 +69,7 @@
       </div>
     </div>
   </div>
-  {/if}
-
   <!-- Static sidebar for desktop, closeable on small screens -->
-  {#if $simStatus}
   <div class="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
     <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-4">
       <div class="flex h-16 shrink-0 items-center justify-between">
@@ -111,14 +100,6 @@
                   <span class="align-middle">My Flights</span>
                 </a>
               </li>
-              <li>
-                <a href="/logs" class={`group flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold ${$page.url.pathname === '/logs' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`} onclick={() => sidebarOpen = false}>
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 align-middle">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" />
-                  </svg>
-                  <span class="align-middle">Logs</span>
-                </a>
-              </li>
             </ul>
           </li>
         </ul>
@@ -139,51 +120,67 @@
   <div class={$simStatus ? "lg:pl-72" : ""}>
     {#if $simStatus}
       <div class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-xs sm:gap-x-6 sm:px-6 lg:px-8">
-        <button type="button" class="-m-2.5 p-2.5 text-gray-700 lg:hidden" onclick={() => sidebarOpen = true}>
-          <span class="sr-only">Open sidebar</span>
-          <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-          </svg>
-        </button>
-        <div class="flex flex-1 items-center justify-end gap-4">
-          {#if $simulatorState}
-            <span class="ml-2 flex items-center">
-              {#if $simulatorState.pause === 1}
-                <svg
-                  class="size-6 text-yellow-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                >
-                  <title>
-                    Paused{typeof $simulatorState.realism === 'number' ? `\nRealism: ${($simulatorState.realism * 100).toFixed(0)}%` : ''}{typeof $simulatorState.simulation_rate === 'number' ? `\nRate: ${$simulatorState.simulation_rate}` : ''}
-                  </title>
-                  <rect x="6" y="4" width="3" height="16" rx="1" fill="currentColor" />
-                  <rect x="15" y="4" width="3" height="16" rx="1" fill="currentColor" />
-                </svg>
-              {:else}
-                <svg
-                  class="size-6 text-emerald-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                >
-                  <title>
-                    Running{typeof $simulatorState.realism === 'number' ? `\nRealism: ${($simulatorState.realism * 100).toFixed(0)}%` : ''}{typeof $simulatorState.simulation_rate === 'number' ? `\nRate: ${$simulatorState.simulation_rate}` : ''}
-                  </title>
-                  <polygon points="6,4 20,12 6,20" fill="currentColor" />
-                </svg>
-              {/if}
-            </span>
-          {/if}
+        <div class="flex w-full items-center">
+          <button type="button" class="-m-2.5 p-2.5 pr-4 text-gray-700 lg:hidden" onclick={() => sidebarOpen = true}>
+            <span class="sr-only">Open sidebar</span>
+            <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+          </button>
+          <div class="flex flex-1 items-center justify-end gap-4">
+            {#if $simulatorState}
+              <span class="ml-2 flex items-center">
+                {#if $simulatorState.pause === 1}
+                  <svg
+                    class="size-6 text-yellow-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                  >
+                    <title>
+                      Paused{typeof $simulatorState.realism === 'number' ? `\nRealism: ${($simulatorState.realism * 100).toFixed(0)}%` : ''}{typeof $simulatorState.simulation_rate === 'number' ? `\nRate: ${Math.round($simulatorState.simulation_rate)}` : ''}
+                    </title>
+                    <rect x="6" y="4" width="3" height="16" rx="1" fill="currentColor" />
+                    <rect x="15" y="4" width="3" height="16" rx="1" fill="currentColor" />
+                  </svg>
+                {:else}
+                  <svg
+                    class="size-6 text-emerald-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                  >
+                    <title>
+                      Running{typeof $simulatorState.realism === 'number' ? `\nRealism: ${($simulatorState.realism * 100).toFixed(0)}%` : ''}{typeof $simulatorState.simulation_rate === 'number' ? `\nRate: ${Math.round($simulatorState.simulation_rate)}` : ''}
+                    </title>
+                    <polygon points="6,4 20,12 6,20" fill="currentColor" />
+                  </svg>
+                {/if}
+              </span>
+            {/if}
+          </div>
         </div>
       </div>
     {/if}
     <main class="h-min-full">
       <div>
-        {@render children()}
+        <div class="min-h-full isolate relative p-6">
+        {#if !$simStatus}
+            <img src="/hero-image.jpg" alt="" class="fixed inset-0 -z-10 w-full h-full object-cover object-top" />
+            <div class="w-full px-6 py-32 text-center sm:py-40 lg:px-8">
+                <span class="inline-block rounded-full bg-rose-100/80 px-4 py-1 text-base font-semibold text-rose-700 shadow-md mb-4">Is your simulator running?</span>
+                <h1 class="mt-4 text-5xl font-extrabold tracking-tight text-balance text-white drop-shadow-lg sm:text-7xl">Not Connected</h1>
+                <p class="mt-6 text-lg font-medium text-pretty text-slate-200/90 sm:text-xl/8 drop-shadow">The application is not connected to the simulator.<br>Start the simulator and ensure SimConnect is available.</p>
+                <div class="mt-16 flex justify-center">
+                  <a href="/settings" class="inline-flex items-center rounded-lg bg-emerald-500 px-8 py-3 text-lg font-bold text-white shadow-lg hover:bg-emerald-600 focus:outline-none focus:ring-4 focus:ring-emerald-300 focus:ring-offset-2 transition-all duration-200">Go to Settings</a>
+                </div>
+            </div>
+          {:else}
+            {@render children()}
+          {/if}
+        </div>
       </div>
     </main>
   </div>

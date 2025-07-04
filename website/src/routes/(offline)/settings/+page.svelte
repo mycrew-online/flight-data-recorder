@@ -1,5 +1,20 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+
+  import GeneralTab from './GeneralTab.svelte';
+
+  let tabs = [
+    { name: 'General', component: GeneralTab }
+  ];
+  let selectedTab: number = 0; // Default to Interview
+  function selectTab(idx: number) {
+    selectedTab = idx;
+  }
+  function selectTabFromDropdown(e: Event) {
+    const idx = Array.from((e.target as HTMLSelectElement).options).findIndex(option => option.selected);
+    selectedTab = idx;
+  }
+
   function onSave() {
     // TODO: Implement save logic
     alert('Settings saved!');
@@ -7,6 +22,7 @@
   function onClose() {
     goto('/');
   }
+
 </script>
 
 <div class="bg-gray-900 min-h-screen text-white">
@@ -38,16 +54,55 @@
         </ol>
       </nav>
     </div>
-    <div class="mt-2 md:flex md:items-center md:justify-between">
+    <div class="mt-6 md:flex md:items-center md:justify-between">
       <div class="min-w-0 flex-1">
         <h2 class="text-2xl/7 font-bold text-white sm:truncate sm:text-3xl sm:tracking-tight">Settings</h2>
       </div>
       <div class="mt-4 flex shrink-0 md:mt-0 md:ml-4">
-        <button type="button" class="inline-flex items-center rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" on:click={onClose}>Discard</button>
-        <button type="button" class="ml-3 inline-flex items-center rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500" on:click={onSave}>Save</button>
+        <button type="button" class="inline-flex items-center rounded-full bg-white/10 p-2 text-white hover:bg-white/20 focus:outline-none" on:click={onClose} aria-label="Close settings">
+          <svg class="size-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10 8.586l4.95-4.95a1 1 0 1 1 1.414 1.414L11.414 10l4.95 4.95a1 1 0 0 1-1.414 1.414L10 11.414l-4.95 4.95a1 1 0 0 1-1.414-1.414L8.586 10l-4.95-4.95A1 1 0 1 1 5.05 3.636L10 8.586z" clip-rule="evenodd" />
+          </svg>
+        </button>
       </div>
     </div>
 
     <!-- Settings form/content goes here -->
+
+
+
+    <div class="relative border-b border-gray-200 pb-5 sm:pb-0 bg-gray-100 min-h-full mt-6">
+      <!-- svelte-ignore a11y_missing_content -->
+      <div class="mt-8 px-4 pb-2 pt-7">
+        <div class="grid grid-cols-1 sm:hidden">
+          <select aria-label="Select a tab" class="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-2 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600" on:change={selectTabFromDropdown}>
+            {#each tabs as tab, idx}
+              <option value={tab.name} selected={selectedTab === idx}>{tab.name}</option>
+            {/each}
+          </select>
+          <svg class="pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end fill-gray-500" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" data-slot="icon">
+            <path fill-rule="evenodd" d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <!-- Tabs at small breakpoint and up -->
+        <div class="hidden sm:block">
+          <nav class="-mb-px flex space-x-8">
+            {#each tabs as tab, idx}
+              <button type="button"
+                class="border-b-2 px-1 pb-4 text-sm font-medium whitespace-nowrap focus:outline-none {selectedTab === idx ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}"
+                aria-current={selectedTab === idx ? 'page' : undefined}
+                on:click={() => selectTab(idx)}>{tab.name}</button>
+            {/each}
+          </nav>
+        </div>
+      </div>
+      <div class="bg-white rounded-b-md p-6 mt-2 min-h-[120px] text-gray-900">
+        {#if tabs && typeof selectedTab === 'number' && tabs[selectedTab]}
+          {#key selectedTab}
+            <svelte:component this={tabs[selectedTab].component} />
+          {/key}
+        {/if}
+      </div>
+    </div>
   </div>
 </div>
