@@ -39,6 +39,9 @@ type AirplaneData struct {
 	AltAboveGround  float64   // feet
 	Pitch           float64   // degrees
 	VerticalSpeed   float64   // feet/min
+	GroundVelocity  float64   // knots
+	AirspeedTrue    float64   // knots
+	AngleOfAttack   float64   // radians
 }
 
 // AirplaneState holds the main simvars to be monitored and is extensible for future fields
@@ -54,6 +57,9 @@ type AirplaneState struct {
 	AltAboveGround  float64 `json:"alt_above_ground"`
 	Pitch           float64 `json:"pitch"`
 	VerticalSpeed   float64 `json:"vertical_speed"`
+	GroundVelocity  float64 `json:"ground_velocity"`
+	AirspeedTrue    float64 `json:"airspeed_true"`
+	AngleOfAttack   float64 `json:"angle_of_attack"`
 }
 
 // EnvironmentData matches the simvar order and types for environment data definition
@@ -247,7 +253,7 @@ func (m *SimConnectManager) connect() {
 	_ = m.client.AddToDataDefinition(defineID, "VERTICAL SPEED", "feet per minute", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 10)
 	_ = m.client.AddToDataDefinition(defineID, "GROUND VELOCITY", "knots", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 11)
 	_ = m.client.AddToDataDefinition(defineID, "AIRSPEED TRUE", "knots", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 12)
-	_ = m.client.AddToDataDefinition(defineID, "ANGLE OF ATTACK INDICATOR", "radians", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 13)
+	_ = m.client.AddToDataDefinition(defineID, "ANGLE OF ATTACK INDICATOR", "degrees", types.SIMCONNECT_DATATYPE_FLOAT64, 0.0, 13)
 	// Register environment data definition (matches EnvironmentData struct)
 	envDefineID := 2
 	_ = m.client.AddToDataDefinition(envDefineID, "ZULU TIME", "seconds", types.SIMCONNECT_DATATYPE_INT32, 0.0, 0)
@@ -473,13 +479,16 @@ func (m *SimConnectManager) listen() {
 
 					// Extract and format vertical speed
 					rawVerticalSpeed := *(*float64)(unsafe.Pointer(uintptr(dataPtr) + 328))
-					// Round very small values to zero for cleaner display
-					// Values less than 0.1 ft/min are essentially zero for practical purposes
 					if math.Abs(rawVerticalSpeed) < 0.1 {
 						m.airplaneState.VerticalSpeed = 0.0
 					} else {
 						m.airplaneState.VerticalSpeed = math.Round(rawVerticalSpeed*100) / 100 // Round to 2 decimal places
 					}
+
+					// New fields
+					m.airplaneState.GroundVelocity = *(*float64)(unsafe.Pointer(uintptr(dataPtr) + 336))
+					m.airplaneState.AirspeedTrue = *(*float64)(unsafe.Pointer(uintptr(dataPtr) + 344))
+					m.airplaneState.AngleOfAttack = *(*float64)(unsafe.Pointer(uintptr(dataPtr) + 352))
 
 					m.logInfo("AirplaneState: ", m.airplaneState)
 					// Emit airplane state to frontend

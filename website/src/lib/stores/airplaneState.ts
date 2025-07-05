@@ -14,6 +14,9 @@ export interface AirplaneState {
   alt_above_ground: number;
   pitch: number;
   vertical_speed: number; // Changed to number for consistency
+  ground_velocity: number; // Changed to number for consistency
+  airpeed_true: number; // Changed to number for consistency
+  angle_of_attack: number; // Changed to number for consistency
   // Add other properties as needed from your backend
 }
 

@@ -57,25 +57,6 @@ $: env = $environmentState;
     </dd>
   </div>
   <div class="px-4 py-5 sm:p-6">
-    <dt class="text-base font-normal text-gray-900">Altitude</dt>
-    <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
-      <div class="flex items-baseline text-2xl font-semibold text-indigo-600">
-        {#if typeof $airplaneState?.altitude === 'number'}
-          <span>{$airplaneState.altitude.toLocaleString(undefined, {maximumFractionDigits: 0})}<span class="ml-1">ft</span></span>
-          <span class="ml-2 text-sm font-medium text-gray-500">
-            {#if $airplaneState.altitude * 0.3048 >= 1000}
-              {($airplaneState.altitude * 0.3048 / 1000).toFixed(2)} km
-            {:else}
-              {($airplaneState.altitude * 0.3048).toFixed(0)} m
-            {/if}
-          </span>
-        {:else}
-          -
-        {/if}
-      </div>
-    </dd>
-  </div>
-  <div class="px-4 py-5 sm:p-6">
     <dt class="text-base font-normal text-gray-900">Heading</dt>
     <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
       <div class="flex items-baseline text-2xl font-semibold text-indigo-600">
@@ -95,12 +76,37 @@ $: env = $environmentState;
     </dd>
   </div>
   <div class="px-4 py-5 sm:p-6">
-    <dt class="text-base font-normal text-gray-900">Airspeed</dt>
+    <dt class="text-base font-normal text-gray-900">Altitude</dt>
     <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
       <div class="flex items-baseline text-2xl font-semibold text-indigo-600">
-        {#if typeof $airplaneState?.airspeed === 'number'}
-          <span>{$airplaneState.airspeed.toFixed(0)}<span class="ml-1">kt</span></span>
-          <span class="ml-2 text-sm font-medium text-gray-500">{($airplaneState.airspeed * 1.852).toFixed(0)} km/h</span>
+        {#if typeof $airplaneState?.altitude === 'number'}
+          <span>{$airplaneState.altitude.toLocaleString(undefined, {maximumFractionDigits: 0})}<span class="ml-1">ft</span></span>
+          <span class="ml-2 text-sm font-medium text-gray-500">
+            {#if $airplaneState.altitude * 0.3048 >= 1000}
+              {($airplaneState.altitude * 0.3048 / 1000).toFixed(2)} km
+            {:else}
+              {($airplaneState.altitude * 0.3048).toFixed(0)} m
+            {/if}
+          </span>
+        {:else}
+          -
+        {/if}
+      </div>
+    </dd>
+  </div>
+  <div class="px-4 py-5 sm:p-6">
+    <dt class="text-base font-normal text-gray-900">Alt Above Ground</dt>
+    <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
+      <div class="flex items-baseline text-2xl font-semibold text-indigo-600">
+        {#if typeof $airplaneState?.alt_above_ground === 'number'}
+          <span>{$airplaneState.alt_above_ground.toLocaleString(undefined, {maximumFractionDigits: 0})}<span class="ml-1">ft</span></span>
+          <span class="ml-2 text-sm font-medium text-gray-500">
+            {#if $airplaneState.alt_above_ground * 0.3048 >= 1000}
+              {($airplaneState.alt_above_ground * 0.3048 / 1000).toFixed(2)} km
+            {:else}
+              {($airplaneState.alt_above_ground * 0.3048).toFixed(0)} m
+            {/if}
+          </span>
         {:else}
           -
         {/if}
@@ -148,18 +154,50 @@ $: env = $environmentState;
     </dd>
   </div>
   <div class="px-4 py-5 sm:p-6">
-    <dt class="text-base font-normal text-gray-900">Alt Above Ground</dt>
+    <dt class="text-base font-normal text-gray-900">Angle of attack</dt>
     <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
       <div class="flex items-baseline text-2xl font-semibold text-indigo-600">
-        {#if typeof $airplaneState?.alt_above_ground === 'number'}
-          <span>{$airplaneState.alt_above_ground.toLocaleString(undefined, {maximumFractionDigits: 0})}<span class="ml-1">ft</span></span>
-          <span class="ml-2 text-sm font-medium text-gray-500">
-            {#if $airplaneState.alt_above_ground * 0.3048 >= 1000}
-              {($airplaneState.alt_above_ground * 0.3048 / 1000).toFixed(2)} km
-            {:else}
-              {($airplaneState.alt_above_ground * 0.3048).toFixed(0)} m
-            {/if}
-          </span>
+        {#if typeof $airplaneState?.angle_of_attack === 'number'}
+          <span>{(180 - $airplaneState.angle_of_attack).toFixed(0)}<span class="ml-1">°</span></span>
+        {:else}
+          -
+        {/if}
+      </div>
+    </dd>
+  </div>
+  <div class="px-4 py-5 sm:p-6">
+    <dt class="text-base font-normal text-gray-900">Airspeed</dt>
+    <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
+      <div class="flex items-baseline text-2xl font-semibold text-indigo-600">
+        {#if typeof $airplaneState?.airspeed === 'number'}
+          <span>{$airplaneState.airspeed.toFixed(0)}<span class="ml-1">kt</span></span>
+          <span class="ml-2 text-sm font-medium text-gray-500">{($airplaneState.airspeed * 1.852).toFixed(0)} km/h</span>
+        {:else}
+          -
+        {/if}
+      </div>
+    </dd>
+  </div>
+  <div class="px-4 py-5 sm:p-6">
+    <dt class="text-base font-normal text-gray-900">Airspeed True</dt>
+    <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
+      <div class="flex items-baseline text-2xl font-semibold text-indigo-600">
+        {#if typeof $airplaneState?.airspeed === 'number'}
+          <span>{$airplaneState.airspeed.toFixed(0)}<span class="ml-1">kt</span></span>
+          <span class="ml-2 text-sm font-medium text-gray-500">{($airplaneState.airspeed_true * 1.852).toFixed(0)} km/h</span>
+        {:else}
+          -
+        {/if}
+      </div>
+    </dd>
+  </div>
+    <div class="px-4 py-5 sm:p-6">
+    <dt class="text-base font-normal text-gray-900">Ground Velocity</dt>
+    <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
+      <div class="flex items-baseline text-2xl font-semibold text-indigo-600">
+        {#if typeof $airplaneState?.airspeed === 'number'}
+          <span>{$airplaneState.airspeed.toFixed(0)}<span class="ml-1">kt</span></span>
+          <span class="ml-2 text-sm font-medium text-gray-500">{($airplaneState.ground_velocity * 1.852).toFixed(0)} km/h</span>
         {:else}
           -
         {/if}
